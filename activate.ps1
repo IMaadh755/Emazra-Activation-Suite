@@ -1,7 +1,6 @@
 # List of allowed MAC addresses - add your authorized MACs here (format: uppercase, with dashes)
 $allowedMACs = @(
-    "C8-D9-D2-A0-E3-24",
-    "C0-B6-F9-89-A5-44"
+    "C0:B6:F9:89:A5:44"
 )
 
 # Get the real, physical, active MAC address
