@@ -214,12 +214,12 @@ function Show-ActivateScreen {
         
         $stdMac = $mac -replace ":", "-"
         if ($allowedMACs -contains $stdMac) {
-            $global:macLabel.Text = "MAC Address Status: ✅ Authorized ($mac)"
+            $global:macLabel.Text = "MAC Address Status:✔ Authorized ($mac)"
             $global:macLabel.ForeColor = $successColor
             $global:activateButton.Enabled = $true
         }
         else {
-            $global:macLabel.Text = "MAC Address Status: ❌ Unauthorized ($mac)"
+            $global:macLabel.Text = "MAC Address Status:✘ Unauthorized ($mac)"
             $global:macLabel.ForeColor = $errorColor
             $global:activateButton.Enabled = $false
             [System.Windows.Forms.MessageBox]::Show("This device is not authorized.`nPlease contact IMaadh with your MAC address to get approval.`nYour MAC: $mac", "Unauthorized", "OK", "Warning")
