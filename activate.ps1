@@ -11,9 +11,8 @@ Add-Type -AssemblyName System.Drawing
 
 # List of allowed MAC addresses
 $allowedMACs = @(
-    "C0-B6-F9-89-A5-44"
     "D8-3B-BF-D9-93-2E",
-    "C2-B6-F9-89-A5-24"
+    "C2:B6:F9:89:A5:44"
 )
 
 # Main Form
@@ -205,26 +204,27 @@ function Show-ActivateScreen {
     $checkMacBtn.FlatStyle = "Flat"
     $checkMacBtn.FlatAppearance.BorderSize = 0
     $checkMacBtn.Add_Click({
-        $mac = Get-MacAddress
-        if (-not $mac) {
-            $global:macLabel.Text = "MAC Address Status: ❌ Not Available"
-            $global:macLabel.ForeColor = $errorColor
-            [System.Windows.Forms.MessageBox]::Show("Could not retrieve MAC address. Please check your network connection.", "Error", "OK", "Error")
-            return
-        }
-        
-        $stdMac = $mac -replace ":", "-"
-        if ($allowedMACs -contains $stdMac) {
-            $global:macLabel.Text = "MAC Address Status: ✅ Authorized ($mac)"
-            $global:macLabel.ForeColor = $successColor
-            $global:activateButton.Enabled = $true
-        }
-        else {
-            $global:macLabel.Text = "MAC Address Status: ❌ Unauthorized ($mac)"
-            $global:macLabel.ForeColor = $errorColor
-            $global:activateButton.Enabled = $false
-            [System.Windows.Forms.MessageBox]::Show("This device is not authorized.`nPlease contact IMaadh with your MAC address to get approval.`nYour MAC: $mac", "Unauthorized", "OK", "Warning")
-        }
+        $macList = Get-MacAddress
+if (-not $macList -or $macList.Count -eq 0) {
+    $global:macLabel.Text = "MAC Address Status: ❌ Not Available"
+    $global:macLabel.ForeColor = $errorColor
+    [System.Windows.Forms.MessageBox]::Show("Could not retrieve MAC address. Please check your network connection.", "Error", "OK", "Error")
+    return
+}
+
+$authorizedMac = $macList | ForEach-Object { $_.ToUpper() -replace ":", "-" } | Where-Object { $allowedMACs -contains $_ }
+
+if ($authorizedMac) {
+    $global:macLabel.Text = "MAC Address Status: ✅ Authorized ($authorizedMac)"
+    $global:macLabel.ForeColor = $successColor
+    $global:activateButton.Enabled = $true
+}
+else {
+    $global:macLabel.Text = "MAC Address Status: ❌ Unauthorized ($($macList -join ', '))"
+    $global:macLabel.ForeColor = $errorColor
+    $global:activateButton.Enabled = $false
+    [System.Windows.Forms.MessageBox]::Show("This device is not authorized.`nPlease contact IMaadh with your MAC address to get approval.`nMAC(s): $($macList -join ', ')", "Unauthorized", "OK", "Warning")
+}
     })
     
     # Activation Button
@@ -273,17 +273,13 @@ function Get-SystemInfo {
 # MAC Address Function
 function Get-MacAddress {
     try {
-        $mac = (Get-CimInstance Win32_NetworkAdapterConfiguration |
-                Where-Object { $_.MACAddress -and $_.IPEnabled -eq $true -and $_.Description -notmatch "Hyper-V|Virtual|VMware|Loopback" } |
-                Select-Object -First 1 -ExpandProperty MACAddress).ToUpper()
-        
-        if (-not $mac) {
-            # Alternative method using Get-NetAdapter
-            $mac = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" -and $_.MacAddress } | 
-                   Select-Object -First 1 -ExpandProperty MacAddress).ToUpper()
-        }
-        
-        return $mac
+        $macs = (Get-CimInstance Win32_NetworkAdapterConfiguration |
+            Where-Object { $_.MACAddress -and $_.IPEnabled -eq $true -and $_.Description -notmatch "Hyper-V|Virtual|VMware|Loopback|Bluetooth" } |
+            Select-Object -ExpandProperty MACAddress) +
+            (Get-NetAdapter | Where-Object { $_.Status -eq "Up" -and $_.MacAddress } |
+            Select-Object -ExpandProperty MacAddress)
+
+        return $macs | Where-Object { $_ } | Select-Object -Unique
     }
     catch {
         return $null
