@@ -11,7 +11,8 @@ Add-Type -AssemblyName System.Drawing
 
 # List of allowed MAC addresses
 $allowedMACs = @(
-    "D8:3B:BF:D9:93:2E"
+    "D8:3B:BF:D9:93:2E",
+    "C2-B6-F9-89-A5-44"
 )
 
 # Main Form
