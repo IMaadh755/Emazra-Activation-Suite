@@ -14,10 +14,17 @@ $firebaseConfig = @{
     apiKey = "AIzaSyAIkxPBr-NRgpT2PjsoyOoR5gSUxwWTAVQ"
     authDomain = "emazra-activator-suit.firebaseapp.com"
     projectId = "emazra-activator-suit"
-    storageBucket = "emazra-activator-suit.firebasestorage.app"
+    storageBucket = "emazra-activator-suit.appspot.com"
     messagingSenderId = "881246610119"
     appId = "1:881246610119:web:04ad30ccf5c13b2b66d4e2"
     measurementId = "G-J846E7FTNC"
+}
+
+# Function to get Firebase Auth Token (simplified version)
+function Get-FirebaseToken {
+    # In a real implementation, you would use OAuth2 flow to get a token
+    # For simplicity, we'll use the API key directly (not recommended for production)
+    return $firebaseConfig.apiKey
 }
 
 # Function to get data from Firestore
@@ -28,12 +35,18 @@ function Get-FirestoreData {
     )
     
     try {
+        $token = Get-FirebaseToken
         $firestoreUrl = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/$collection"
         if ($document) {
             $firestoreUrl += "/$document"
         }
         
-        $response = Invoke-RestMethod -Uri $firestoreUrl -Method Get
+        $headers = @{
+            "Authorization" = "Bearer $token"
+            "Content-Type" = "application/json"
+        }
+        
+        $response = Invoke-RestMethod -Uri $firestoreUrl -Method Get -Headers $headers
         return $response
     }
     catch {
