@@ -15,7 +15,7 @@ $firebaseConfig = @{
     projectId = "emazra-activator-suit"
 }
 
-# Function to get data from Firestore
+# Function to get data from Firestore with proper authentication
 function Get-FirestoreData {
     param (
         [string]$collection,
@@ -23,10 +23,15 @@ function Get-FirestoreData {
     )
     
     try {
+        # Build the Firestore URL
         $url = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/$collection"
         if ($document) { $url += "/$document" }
         
-        $response = Invoke-RestMethod -Uri $url -Method Get
+        # Add the API key as a query parameter
+        $url += "?key=$($firebaseConfig.apiKey)"
+        
+        # Make the request
+        $response = Invoke-RestMethod -Uri $url -Method Get -ErrorAction Stop
         return $response
     }
     catch {
@@ -37,22 +42,22 @@ function Get-FirestoreData {
 
 # Get product key from Firestore
 $keyResponse = Get-FirestoreData -collection "productKeys" -document "defaultKey"
-if ($keyResponse -and $keyResponse.fields.key.stringValue) { 
-    $productKey = $keyResponse.fields.key.stringValue 
-} else { 
-    [System.Windows.Forms.MessageBox]::Show("Failed to get product key from server", "Error", "OK", "Error")
-    return
+if ($null -eq $keyResponse -or $null -eq $keyResponse.fields) {
+    [System.Windows.Forms.MessageBox]::Show("Failed to connect to activation server. Please check your internet connection.", "Connection Error", "OK", "Error")
+    exit
 }
+
+$productKey = $keyResponse.fields.key.stringValue
 
 # Get allowed MAC addresses from Firestore
 $macResponse = Get-FirestoreData -collection "devices"
-$allowedMACs = if ($macResponse -and $macResponse.documents) {
-    $macResponse.documents | Where-Object { $_.fields.status.stringValue -eq "active" } | 
-    ForEach-Object { $_.fields.macAddress.stringValue }
-} else {
-    [System.Windows.Forms.MessageBox]::Show("Failed to get device list from server", "Error", "OK", "Error")
-    return
+if ($null -eq $macResponse -or $null -eq $macResponse.documents) {
+    [System.Windows.Forms.MessageBox]::Show("Failed to get device authorization list. Please try again later.", "Connection Error", "OK", "Error")
+    exit
 }
+
+$allowedMACs = $macResponse.documents | Where-Object { $_.fields.status.stringValue -eq "active" } | 
+                ForEach-Object { $_.fields.macAddress.stringValue }
 
 # Main Form
 $mainForm = New-Object System.Windows.Forms.Form
