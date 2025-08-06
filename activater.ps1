@@ -11,7 +11,13 @@ Add-Type -AssemblyName System.Drawing
 
 # Initialize Firebase
 $firebaseConfig = @{
+    apiKey = "AIzaSyAIkxPBr-NRgpT2PjsoyOoR5gSUxwWTAVQ"
+    authDomain = "emazra-activator-suit.firebaseapp.com"
     projectId = "emazra-activator-suit"
+    storageBucket = "emazra-activator-suit.firebasestorage.app"
+    messagingSenderId = "881246610119"
+    appId = "1:881246610119:web:04ad30ccf5c13b2b66d4e2"
+    measurementId = "G-J846E7FTNC"
 }
 
 # Function to get data from Firestore
