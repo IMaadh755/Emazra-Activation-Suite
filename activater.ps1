@@ -9,22 +9,10 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-# Initialize Firebase
+# Firebase Configuration
 $firebaseConfig = @{
     apiKey = "AIzaSyAIkxPBr-NRgpT2PjsoyOoR5gSUxwWTAVQ"
-    authDomain = "emazra-activator-suit.firebaseapp.com"
     projectId = "emazra-activator-suit"
-    storageBucket = "emazra-activator-suit.appspot.com"
-    messagingSenderId = "881246610119"
-    appId = "1:881246610119:web:04ad30ccf5c13b2b66d4e2"
-    measurementId = "G-J846E7FTNC"
-}
-
-# Function to get Firebase Auth Token (simplified version)
-function Get-FirebaseToken {
-    # In a real implementation, you would use OAuth2 flow to get a token
-    # For simplicity, we'll use the API key directly (not recommended for production)
-    return $firebaseConfig.apiKey
 }
 
 # Function to get data from Firestore
@@ -35,50 +23,35 @@ function Get-FirestoreData {
     )
     
     try {
-        $token = Get-FirebaseToken
-        $firestoreUrl = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/$collection"
-        if ($document) {
-            $firestoreUrl += "/$document"
-        }
+        $url = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/$collection"
+        if ($document) { $url += "/$document" }
         
-        $headers = @{
-            "Authorization" = "Bearer $token"
-            "Content-Type" = "application/json"
-        }
-        
-        $response = Invoke-RestMethod -Uri $firestoreUrl -Method Get -Headers $headers
+        $response = Invoke-RestMethod -Uri $url -Method Get
         return $response
     }
     catch {
-        Write-Host "Error accessing Firestore: $_"
+        Write-Host "Firestore Error: $_"
         return $null
     }
 }
 
 # Get product key from Firestore
-$productKeyResponse = Get-FirestoreData -collection "productKeys" -document "defaultKey"
-if ($productKeyResponse -and $productKeyResponse.fields) {
-    $productKey = $productKeyResponse.fields.key.stringValue
-} else {
-    $productKey = "R3YVV-2N6QX-XJBX4-78WQR-8B49M" # Fallback key
+$keyResponse = Get-FirestoreData -collection "productKeys" -document "defaultKey"
+if ($keyResponse -and $keyResponse.fields.key.stringValue) { 
+    $productKey = $keyResponse.fields.key.stringValue 
+} else { 
+    [System.Windows.Forms.MessageBox]::Show("Failed to get product key from server", "Error", "OK", "Error")
+    return
 }
 
 # Get allowed MAC addresses from Firestore
-$allowedMACs = @()
-$macsResponse = Get-FirestoreData -collection "devices"
-if ($macsResponse -and $macsResponse.documents) {
-    foreach ($doc in $macsResponse.documents) {
-        if ($doc.fields.status.stringValue -eq "active") {
-            $allowedMACs += $doc.fields.macAddress.stringValue
-        }
-    }
+$macResponse = Get-FirestoreData -collection "devices"
+$allowedMACs = if ($macResponse -and $macResponse.documents) {
+    $macResponse.documents | Where-Object { $_.fields.status.stringValue -eq "active" } | 
+    ForEach-Object { $_.fields.macAddress.stringValue }
 } else {
-    # Fallback MAC addresses if Firestore is not accessible
-    $allowedMACs = @(
-        "C0-B6-F9-89-A5-44",
-        "D8-3B-BF-D9-93-2E",
-        "48-22-54-80-52-F9"
-    )
+    [System.Windows.Forms.MessageBox]::Show("Failed to get device list from server", "Error", "OK", "Error")
+    return
 }
 
 # Main Form
@@ -281,9 +254,6 @@ function Show-ActivateScreen {
             $global:macLabel.Text = "MAC Address Status: Authorized ($mac)"
             $global:macLabel.ForeColor = $successColor
             $global:activateButton.Enabled = $true
-            
-            # Update last active time in Firestore
-            Update-DeviceLastActive -macAddress $stdMac
         }
         else {
             $global:macLabel.Text = "MAC Address Status: Unauthorized ($mac)"
@@ -353,55 +323,6 @@ function Get-MacAddress {
     }
     catch {
         return $null
-    }
-}
-
-# Update device last active time in Firestore
-function Update-DeviceLastActive {
-    param (
-        [string]$macAddress
-    )
-    
-    try {
-        $body = @{
-            fields = @{
-                lastActive = @{
-                    timestampValue = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-                }
-            }
-        } | ConvertTo-Json -Depth 5
-        
-        # First find the document ID for this MAC address
-        $queryUrl = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/devices?mask.fieldPaths=macAddress&mask.fieldPaths=lastActive"
-        $queryBody = @{
-            structuredQuery = @{
-                where = @{
-                    fieldFilter = @{
-                        field = @{ fieldPath = "macAddress" }
-                        op = "EQUAL"
-                        value = @{ stringValue = $macAddress }
-                    }
-                }
-                from = @( @{ collectionId = "devices" } )
-                limit = 1
-            }
-        } | ConvertTo-Json -Depth 5
-        
-        $queryResponse = Invoke-RestMethod -Uri $queryUrl -Method Post -Body $queryBody -ContentType "application/json"
-        
-        if ($queryResponse.documents -and $queryResponse.documents.Count -gt 0) {
-            $documentId = $queryResponse.documents[0].name.Split('/')[-1]
-            $updateUrl = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/devices/$documentId?updateMask.fieldPaths=lastActive"
-            
-            $response = Invoke-RestMethod -Uri $updateUrl -Method Patch -Body $body -ContentType "application/json"
-            return $true
-        }
-        
-        return $false
-    }
-    catch {
-        Write-Host "Error updating device last active time: $_"
-        return $false
     }
 }
 
