@@ -1,6 +1,6 @@
 <#
     Emazra Activator Suite - Professional Windows Activation Tool
-    Version 2.0.0
+    Version 2.1.0
     Copyright © 2023 Emazra Technologies. All rights reserved.
     App Developed by IMaadh
 #>
@@ -15,7 +15,17 @@ $firebaseConfig = @{
     projectId = "emazra-activator-suit"
 }
 
-# Function to get data from Firestore with proper authentication
+# Function to check internet connection
+function Test-InternetConnection {
+    try {
+        $response = Invoke-WebRequest -Uri "https://www.google.com" -UseBasicParsing -TimeoutSec 5
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Function to get data from Firestore with proper error handling
 function Get-FirestoreData {
     param (
         [string]$collection,
@@ -23,6 +33,10 @@ function Get-FirestoreData {
     )
     
     try {
+        if (-not (Test-InternetConnection)) {
+            throw "No internet connection detected"
+        }
+
         # Build the Firestore URL
         $url = "https://firestore.googleapis.com/v1/projects/$($firebaseConfig.projectId)/databases/(default)/documents/$collection"
         if ($document) { $url += "/$document" }
@@ -30,32 +44,28 @@ function Get-FirestoreData {
         # Add the API key as a query parameter
         $url += "?key=$($firebaseConfig.apiKey)"
         
-        # Make the request
-        $response = Invoke-RestMethod -Uri $url -Method Get -ErrorAction Stop
+        # Make the request with timeout
+        $response = Invoke-RestMethod -Uri $url -Method Get -TimeoutSec 10 -ErrorAction Stop
+        
+        if (-not $response) {
+            throw "Empty response from Firestore"
+        }
+        
         return $response
     }
     catch {
-        Write-Host "Firestore Error: $_"
-        return $null
+        $errorMsg = "Failed to connect to authorization server:`n$($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show($errorMsg, "Connection Error", "OK", "Error")
+        exit
     }
 }
 
 # Get product key from Firestore
 $keyResponse = Get-FirestoreData -collection "productKeys" -document "defaultKey"
-if ($null -eq $keyResponse -or $null -eq $keyResponse.fields) {
-    [System.Windows.Forms.MessageBox]::Show("Failed to connect to activation server. Please check your internet connection.", "Connection Error", "OK", "Error")
-    exit
-}
-
 $productKey = $keyResponse.fields.key.stringValue
 
 # Get allowed MAC addresses from Firestore
 $macResponse = Get-FirestoreData -collection "devices"
-if ($null -eq $macResponse -or $null -eq $macResponse.documents) {
-    [System.Windows.Forms.MessageBox]::Show("Failed to get device authorization list. Please try again later.", "Connection Error", "OK", "Error")
-    exit
-}
-
 $allowedMACs = $macResponse.documents | Where-Object { $_.fields.status.stringValue -eq "active" } | 
                 ForEach-Object { $_.fields.macAddress.stringValue }
 
@@ -246,27 +256,34 @@ function Show-ActivateScreen {
     $checkMacBtn.FlatStyle = "Flat"
     $checkMacBtn.FlatAppearance.BorderSize = 0
     $checkMacBtn.Add_Click({
-        $mac = Get-MacAddress
-        if (-not $mac) {
-            $global:macLabel.Text = "MAC Address Status: ❌ Not Available"
-            $global:macLabel.ForeColor = $errorColor
-            [System.Windows.Forms.MessageBox]::Show("Could not retrieve MAC address. Please check your network connection.", "Error", "OK", "Error")
-            return
-        }
-        
-        $stdMac = $mac -replace ":", "-"
-        if ($allowedMACs -contains $stdMac) {
-            $global:macLabel.Text = "MAC Address Status: Authorized ($mac)"
-            $global:macLabel.ForeColor = $successColor
-            $global:activateButton.Enabled = $true
-        }
-        else {
-            $global:macLabel.Text = "MAC Address Status: Unauthorized ($mac)"
-            $global:macLabel.ForeColor = $errorColor
-            $global:activateButton.Enabled = $false
-            [System.Windows.Forms.MessageBox]::Show("This device is not authorized.`nPlease contact IMaadh with your MAC address to get approval.`nYour MAC: $mac", "Unauthorized", "OK", "Warning")
-        }
-    })
+    $mac = Get-MacAddress
+    if (-not $mac) {
+        $global:macLabel.Text = "MAC Address Status: ❌ Not Available"
+        $global:macLabel.ForeColor = $errorColor
+        [System.Windows.Forms.MessageBox]::Show("Could not retrieve MAC address. Please check your network connection.", "Error", "OK", "Error")
+        return
+    }
+    
+    $stdMac = $mac -replace ":", "-"
+    if ($allowedMACs -contains $stdMac) {
+        $global:macLabel.Text = "MAC Address Status: Authorized ($mac)"
+        $global:macLabel.ForeColor = $successColor
+        $global:activateButton.Enabled = $true
+    }
+    else {
+        $global:macLabel.Text = "MAC Address Status: Unauthorized ($mac)"
+        $global:macLabel.ForeColor = $errorColor
+        $global:activateButton.Enabled = $false
+        $result = [System.Windows.Forms.MessageBox]::Show(
+            "This device is not authorized.`nYour MAC: $mac`n`nThe application will now close.", 
+            "Unauthorized Device", 
+            "OK", 
+            "Error"
+        )
+        $mainForm.Close()
+        exit
+    }
+})
     
     # Activation Button
     $global:activateButton = New-Object System.Windows.Forms.Button
