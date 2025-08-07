@@ -1,0 +1,1 @@
+irm "https://www.emazra.com/Emazra%20Activation%20Suite/Emazra-Activation-Suite.ps1" | iex
