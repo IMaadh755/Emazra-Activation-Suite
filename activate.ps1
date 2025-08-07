@@ -1,142 +1,133 @@
-<#
-    Emazra Activation Suite - Professional Windows Activation Tool
-    Version 2.0.0
-    Copyright © 2023 Emazra Technologies. All rights reserved.
-    App Developed by IMaadh
-#>
-
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
-[System.Windows.Forms.Application]::EnableVisualStyles()
 
-# Main Form
-$mainForm = New-Object System.Windows.Forms.Form
-$mainForm.Text = "Emazra Activation Suite Powered By IMaadh"
-$mainForm.Size = New-Object System.Drawing.Size(900, 600)
-$mainForm.StartPosition = "CenterScreen"
-$mainForm.BackColor = "#2c3e50"
-$mainForm.FormBorderStyle = "FixedSingle"
-$mainForm.MaximizeBox = $false
-$mainForm.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon((Get-Command powershell).Path)
+# Create main form
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Emazra Activation Suite"
+$form.Size = New-Object System.Drawing.Size(800, 600)
+$form.StartPosition = "CenterScreen"
+$form.BackColor = "#0F1923" -as [System.Drawing.Color]
+$form.ForeColor = "White"
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
+$form.Padding = New-Object System.Windows.Forms.Padding(30)
 
-# Fonts
-$titleFont = New-Object System.Drawing.Font("Segoe UI", 24, [System.Drawing.FontStyle]::Bold)
-$buttonFont = New-Object System.Drawing.Font("Segoe UI", 14, [System.Drawing.FontStyle]::Bold)
-$normalFont = New-Object System.Drawing.Font("Segoe UI", 10)
-
-# Colors
-$primaryColor = [System.Drawing.Color]::FromArgb(52, 152, 219)
-$secondaryColor = [System.Drawing.Color]::FromArgb(44, 62, 80)
-$textColor = [System.Drawing.Color]::FromArgb(236, 240, 241)
-$successColor = [System.Drawing.Color]::FromArgb(46, 204, 113)
-$errorColor = [System.Drawing.Color]::FromArgb(231, 76, 60)
+# Custom close button
+$closeButton = New-Object System.Windows.Forms.Button
+$closeButton.Text = "X"
+$closeButton.Size = New-Object System.Drawing.Size(40, 40)
+$closeButton.Location = New-Object System.Drawing.Point(710, 10)
+$closeButton.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+$closeButton.BackColor = "#FF5555" -as [System.Drawing.Color]
+$closeButton.ForeColor = "White"
+$closeButton.FlatStyle = "Flat"
+$closeButton.FlatAppearance.BorderSize = 0
+$closeButton.Cursor = [System.Windows.Forms.Cursors]::Hand
+$closeButton.Add_Click({ $form.Close() })
+$form.Controls.Add($closeButton)
 
 # Header Panel
 $headerPanel = New-Object System.Windows.Forms.Panel
-$headerPanel.Size = New-Object System.Drawing.Size(880, 80)
+$headerPanel.Size = New-Object System.Drawing.Size(740, 80)
 $headerPanel.Location = New-Object System.Drawing.Point(10, 10)
-$headerPanel.BackColor = $primaryColor
+$headerPanel.BackColor = "#0A101A" -as [System.Drawing.Color]
+$form.Controls.Add($headerPanel)
 
 # Title Label
 $titleLabel = New-Object System.Windows.Forms.Label
-$titleLabel.Text = "Emazra Activation Suite Powered By IMaadh"
-$titleLabel.Font = $titleFont
-$titleLabel.ForeColor = [System.Drawing.Color]::White
+$titleLabel.Text = "EMAZRA ACTIVATION SUITE"
+$titleLabel.Font = New-Object System.Drawing.Font("Segoe UI", 18, [System.Drawing.FontStyle]::Bold)
 $titleLabel.AutoSize = $true
-$titleLabel.Location = New-Object System.Drawing.Point(20, 20)
+$titleLabel.Location = New-Object System.Drawing.Point(220, 20)
+$headerPanel.Controls.Add($titleLabel)
 
-# Content Panel
-$contentPanel = New-Object System.Windows.Forms.Panel
-$contentPanel.Size = New-Object System.Drawing.Size(880, 400)
-$contentPanel.Location = New-Object System.Drawing.Point(10, 100)
-$contentPanel.BackColor = $secondaryColor
+# Version Label
+$versionLabel = New-Object System.Windows.Forms.Label
+$versionLabel.Text = "Version 2.0.0"
+$versionLabel.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+$versionLabel.AutoSize = $true
+$versionLabel.Location = New-Object System.Drawing.Point(340, 50)
+$headerPanel.Controls.Add($versionLabel)
+
+# Main Content Panel
+$mainPanel = New-Object System.Windows.Forms.Panel
+$mainPanel.Size = New-Object System.Drawing.Size(740, 400)
+$mainPanel.Location = New-Object System.Drawing.Point(10, 100)
+$mainPanel.BackColor = "#0A101A" -as [System.Drawing.Color]
+$form.Controls.Add($mainPanel)
+
+# Info Label
+$infoLabel = New-Object System.Windows.Forms.Label
+$infoLabel.Text = "Professional Windows Activation Tool"
+$infoLabel.Font = New-Object System.Drawing.Font("Segoe UI", 14, [System.Drawing.FontStyle]::Bold)
+$infoLabel.AutoSize = $true
+$infoLabel.Location = New-Object System.Drawing.Point(200, 40)
+$mainPanel.Controls.Add($infoLabel)
+
+# Button Container (centered)
+$buttonPanel = New-Object System.Windows.Forms.Panel
+$buttonPanel.Size = New-Object System.Drawing.Size(500, 200)
+$buttonPanel.Location = New-Object System.Drawing.Point(120, 120)
+$buttonPanel.BackColor = "#0F1923" -as [System.Drawing.Color]
+$mainPanel.Controls.Add($buttonPanel)
+
+# Centered Windows Buttons
+$buttonY = 70  # Y position for both buttons
+$buttonSpacing = 80  # Space between buttons
+
+# Windows 10 Button (centered)
+$win10Button = New-Object System.Windows.Forms.Button
+$win10Button.Text = "WINDOWS 10"
+$win10Button.Size = New-Object System.Drawing.Size(200, 60)
+$win10Button.Location = New-Object System.Drawing.Point(50, $buttonY)
+$win10Button.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+$win10Button.BackColor = "#0078D7" -as [System.Drawing.Color]
+$win10Button.ForeColor = "White"
+$win10Button.FlatStyle = "Flat"
+$win10Button.FlatAppearance.BorderSize = 0
+$win10Button.Cursor = [System.Windows.Forms.Cursors]::Hand
+$win10Button.Add_Click({
+    irm "https://www.emazra.com/Emazra%20Activation%20Suite/Emazra-Activation-Suite-Win10-Pro.ps1" | iex
+})
+$buttonPanel.Controls.Add($win10Button)
+
+# Windows 11 Button (centered)
+$win11Button = New-Object System.Windows.Forms.Button
+$win11Button.Text = "WINDOWS 11"
+$win11Button.Size = New-Object System.Drawing.Size(200, 60)
+$win11Button.Location = New-Object System.Drawing.Point(250, $buttonY)
+$win11Button.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
+$win11Button.BackColor = "#0078D7" -as [System.Drawing.Color]
+$win11Button.ForeColor = "White"
+$win11Button.FlatStyle = "Flat"
+$win11Button.FlatAppearance.BorderSize = 0
+$win11Button.Cursor = [System.Windows.Forms.Cursors]::Hand
+$win11Button.Add_Click({
+    irm "https://www.emazra.com/Emazra%20Activation%20Suite/Emazra-Activation-Suite-Win11-Pro.ps1" | iex
+})
+$buttonPanel.Controls.Add($win11Button)
 
 # Footer Panel
 $footerPanel = New-Object System.Windows.Forms.Panel
-$footerPanel.Size = New-Object System.Drawing.Size(880, 30)
+$footerPanel.Size = New-Object System.Drawing.Size(740, 50)
 $footerPanel.Location = New-Object System.Drawing.Point(10, 510)
-$footerPanel.BackColor = $secondaryColor
-
-# Status Label (fixed declaration)
-$statusLabel = New-Object System.Windows.Forms.Label
-$statusLabel.Text = "Select your Windows version to activate"
-$statusLabel.Font = $normalFont
-$statusLabel.ForeColor = $textColor
-$statusLabel.AutoSize = $true
-$statusLabel.Location = New-Object System.Drawing.Point(50, 30)
-$statusLabel.Size = New-Object System.Drawing.Size(800, 30)
-
-# Windows 10 Button
-$win10Button = New-Object System.Windows.Forms.Button
-$win10Button.Text = "Windows 10"
-$win10Button.Font = $buttonFont
-$win10Button.Size = New-Object System.Drawing.Size(350, 100)
-$win10Button.Location = New-Object System.Drawing.Point(150, 100)
-$win10Button.BackColor = $primaryColor
-$win10Button.ForeColor = [System.Drawing.Color]::White
-$win10Button.FlatStyle = "Flat"
-$win10Button.FlatAppearance.BorderSize = 0
-$win10Button.Add_Click({
-    $script:statusLabel.Text = "Loading Windows 10 activation..."
-    $script:statusLabel.ForeColor = $textColor
-    $mainForm.Refresh()
-    
-    try {
-        Invoke-RestMethod "https://www.emazra.com/Emazra%20Activation%20Suite/Emazra-Activation-Suite-Win10-Pro.ps1" | Invoke-Expression
-        $script:statusLabel.Text = "✅ Windows 10 activation loaded successfully"
-        $script:statusLabel.ForeColor = $successColor
-    }
-    catch {
-        $script:statusLabel.Text = "❌ Error loading Windows 10 activation: $($_.Exception.Message)"
-        $script:statusLabel.ForeColor = $errorColor
-    }
-})
-
-# Windows 11 Button
-$win11Button = New-Object System.Windows.Forms.Button
-$win11Button.Text = "Windows 11"
-$win11Button.Font = $buttonFont
-$win11Button.Size = New-Object System.Drawing.Size(350, 100)
-$win11Button.Location = New-Object System.Drawing.Point(150, 230)
-$win11Button.BackColor = $primaryColor
-$win11Button.ForeColor = [System.Drawing.Color]::White
-$win11Button.FlatStyle = "Flat"
-$win11Button.FlatAppearance.BorderSize = 0
-$win11Button.Add_Click({
-    $script:statusLabel.Text = "Loading Windows 11 activation..."
-    $script:statusLabel.ForeColor = $textColor
-    $mainForm.Refresh()
-    
-    try {
-        Invoke-RestMethod "https://www.emazra.com/Emazra%20Activation%20Suite/Emazra-Activation-Suite-Win11-Pro.ps1" | Invoke-Expression
-        $script:statusLabel.Text = "✅ Windows 11 activation loaded successfully"
-        $script:statusLabel.ForeColor = $successColor
-    }
-    catch {
-        $script:statusLabel.Text = "❌ Error loading Windows 11 activation: $($_.Exception.Message)"
-        $script:statusLabel.ForeColor = $errorColor
-    }
-})
+$footerPanel.BackColor = "#0A101A" -as [System.Drawing.Color]
+$form.Controls.Add($footerPanel)
 
 # Copyright Label
 $copyrightLabel = New-Object System.Windows.Forms.Label
-$copyrightLabel.Text = "© 2023 Emazra Activation Suite. All Rights Reserved. Developed by IMaadh"
-$copyrightLabel.Font = $normalFont
-$copyrightLabel.ForeColor = $textColor
+$copyrightLabel.Text = "Copyright © 2025 Emazra Group. All rights reserved."
 $copyrightLabel.AutoSize = $true
-$copyrightLabel.Location = New-Object System.Drawing.Point(10, 5)
-
-# Add Controls to Panels
-$headerPanel.Controls.Add($titleLabel)
-$contentPanel.Controls.Add($statusLabel)
-$contentPanel.Controls.Add($win10Button)
-$contentPanel.Controls.Add($win11Button)
+$copyrightLabel.Location = New-Object System.Drawing.Point(220, 15)
 $footerPanel.Controls.Add($copyrightLabel)
 
-# Add Panels to Form
-$mainForm.Controls.Add($headerPanel)
-$mainForm.Controls.Add($contentPanel)
-$mainForm.Controls.Add($footerPanel)
+# Developer Label
+$devLabel = New-Object System.Windows.Forms.Label
+$devLabel.Text = "App Developed by IMaadh"
+$devLabel.AutoSize = $true
+$devLabel.Location = New-Object System.Drawing.Point(580, 15)
+$devLabel.Font = New-Object System.Drawing.Font("Segoe UI", 8)
+$footerPanel.Controls.Add($devLabel)
 
-# Display Form
-$mainForm.ShowDialog() | Out-Null
+# Show form
+$form.Add_Shown({$form.Activate()})
+[void]$form.ShowDialog()
